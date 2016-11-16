@@ -1,0 +1,2 @@
+REVIEWBOARD_URL = 'http://54.67.3.191/reviews/'
+REPOSITORY = 'ansible-reviewboard'
