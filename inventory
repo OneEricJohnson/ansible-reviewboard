@@ -1,0 +1,4 @@
+
+my_reviewboard ansible_host=54.67.3.191 ansible_user=ubuntu ansible_python_interpreter=/usr/bin/python2.7
+
+

@@ -1,0 +1,63 @@
+
+- name: Install needed packages
+  apt: name={{ item }} state=present
+  become: yes
+  with_items:
+    - sqlite
+    - apache2
+    - libapache2-mod-wsgi
+    - python2.7
+    - python-pip
+    - python-setuptools
+    - python-dev
+    - memcached
+    - patch
+    - git-core
+    - subversion
+    - python-svn
+
+# make sure memcached is running.
+- name: Activate memcached
+  service: name=memcached state=started enabled=yes
+  become: yes
+
+- name: Install python packages
+  pip: name={{ item }} state=present
+  become: yes
+  with_items:
+    - psycopg2
+    - python-memcached
+    - ReviewBoard
+
+- name: Create ReviewBoard site
+  command: rb-site install --db-type=sqlite --noinput --opt-out-support-data --site-root=/reviews/ --domain-name=reviews.example.com --admin-user=admin --admin-password=guessme --admin-email=one.eric.johnson@gmail.com --company=NONE --cache-type=memcached --cache-info=localhost:11211 --web-server-type=apache --web-server-port=80 --python-loader=wsgi 
+  become: yes
+  args:
+    creates: /var/www/reviews.example.com
+
+- name: Change permissions on directories
+  file: name=/var/www/reviews.example.com/{{ item }} owner=www-data group=www-data recurse=yes
+  become: yes
+  with_items:
+    - htdocs/media/uploaded
+    - htdocs/media/ext
+    - htdocs/static/ext
+    - data
+
+- name: Copy apache config
+  command: cp /var/www/reviews.example.com/conf/apache-wsgi.conf /etc/apache2/sites-available/reviews.example.com.conf
+  become: yes
+
+- name: Enable apache site
+  file: path=/etc/apache2/sites-enabled/reviews.example.com src=/etc/apache2/sites-available/reviews.example.com.conf state=link
+  become: yes
+
+# make sure apache is running.
+- name: Activate apache
+  service: name=apache2 state=started enabled=yes
+  become: yes
+
+# make sure default site is turned off
+- name: Remove default site
+  file: path=/etc/apache2/sites-enabled/000-default.conf state=absent
+  become: yes
